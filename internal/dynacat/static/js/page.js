@@ -1200,8 +1200,17 @@ function initDesktopNavigationAutoshow() {
     const navAutoshowKey = "dynacat-nav-autoshow";
     const navLinks = navContainer.querySelectorAll(".nav-item");
 
-    if (sessionStorage.getItem(navAutoshowKey) === "1") {
-        sessionStorage.removeItem(navAutoshowKey);
+    let shouldAutoshow = false;
+    try {
+        shouldAutoshow = sessionStorage.getItem(navAutoshowKey) === "1";
+        if (shouldAutoshow) {
+            sessionStorage.removeItem(navAutoshowKey);
+        }
+    } catch (e) {
+        shouldAutoshow = false;
+    }
+
+    if (shouldAutoshow) {
         navContainer.classList.add("nav-autoshow");
 
         const hide = () => {
@@ -1222,7 +1231,11 @@ function initDesktopNavigationAutoshow() {
     for (let i = 0; i < navLinks.length; i++) {
         const navLink = navLinks[i];
         navLink.addEventListener("click", () => {
-            sessionStorage.setItem(navAutoshowKey, "1");
+            try {
+                sessionStorage.setItem(navAutoshowKey, "1");
+            } catch (e) {
+                return;
+            }
         });
     }
 }

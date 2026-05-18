@@ -23,7 +23,7 @@
             {{ if not .App.Config.Branding.HideLogo }}
             <div class="logo" aria-hidden="true">
                 {{- if .App.Config.Branding.LogoURL }}
-                {{- if hasSuffixFold .App.Config.Branding.LogoURL ".svg" }}
+                {{- if hasURLPathSuffixFold .App.Config.Branding.LogoURL ".svg" }}
                 <svg width="512" height="512" viewBox="0 0 1 1" class="logo-svg" aria-hidden="true"><image href="{{ .App.Config.Branding.LogoURL }}" width="1" height="1" preserveAspectRatio="xMidYMid meet"></image></svg>
                 {{- else }}
                 <img src="{{ .App.Config.Branding.LogoURL }}" alt="">

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"math"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -19,7 +20,14 @@ var globalTemplateFunctions = template.FuncMap{
 	"containsStr": func(str, substr string) bool {
 		return strings.Contains(str, substr)
 	},
-	"hasSuffixFold": func(str, suffix string) bool {
+	"hasURLPathSuffixFold": func(str, suffix string) bool {
+		if u, err := url.Parse(str); err == nil {
+			str = u.Path
+		} else {
+			str, _, _ = strings.Cut(str, "?")
+			str, _, _ = strings.Cut(str, "#")
+		}
+
 		return strings.HasSuffix(strings.ToLower(str), strings.ToLower(suffix))
 	},
 	"safeCSS": func(str string) template.CSS {

@@ -330,8 +330,12 @@ kbd:active {
     gap: var(--header-items-gap);
 }
 
-.nav-center {
-    justify-content: center;
+.nav-center .nav-item:first-child {
+    margin-left: auto;
+}
+
+.nav-center .nav-item:last-child {
+    margin-right: auto;
 }
 
 .nav .nav-item {

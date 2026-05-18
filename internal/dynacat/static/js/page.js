@@ -553,7 +553,35 @@ function setupGroups() {
 
         const titles = headerEl.children;
         const tabs = group.getElementsByClassName("widget-group-contents")[0].children;
-        let current = 0;
+        let current = parseInt(group.dataset.currentTab ?? "0", 10);
+
+        if (Number.isNaN(current) || current < 0 || current >= titles.length) {
+            current = 0;
+        }
+
+        const setCurrentTab = (nextCurrent) => {
+            group.dataset.currentTab = String(nextCurrent);
+
+            for (let i = 0; i < titles.length; i++) {
+                titles[i].classList.remove("widget-group-title-current");
+                titles[i].setAttribute("aria-selected", "false");
+                tabs[i].classList.remove("widget-group-content-current");
+                tabs[i].setAttribute("aria-hidden", "true");
+            }
+
+            const title = titles[nextCurrent];
+            const tab = tabs[nextCurrent];
+
+            if (!title || !tab) {
+                return;
+            }
+
+            title.classList.add("widget-group-title-current");
+            title.setAttribute("aria-selected", "true");
+            tab.classList.add("widget-group-content-current");
+            tab.style.animation = '';
+            tab.setAttribute("aria-hidden", "false");
+        };
 
         for (let t = 0; t < titles.length; t++) {
             const title = titles[t];
@@ -593,13 +621,11 @@ function setupGroups() {
 
                 current = t;
 
-                title.classList.add("widget-group-title-current");
-                title.setAttribute("aria-selected", "true");
-                tabs[t].classList.add("widget-group-content-current");
-                tabs[t].style.animation = '';
-                tabs[t].setAttribute("aria-hidden", "false");
+                setCurrentTab(t);
             });
         }
+
+        setCurrentTab(current);
     }
 }
 
@@ -703,6 +729,27 @@ function restoreCollapsibleContainerStates(element, containerStates) {
                 button.click();
             }
         }
+    }
+}
+
+function getGroupTabStates(element) {
+    const groups = [...element.querySelectorAll('.widget-type-group')];
+    return groups.map((group) => {
+        const currentTab = parseInt(group.dataset.currentTab ?? "0", 10);
+        return Number.isNaN(currentTab) ? 0 : currentTab;
+    });
+}
+
+function restoreGroupTabStates(element, groupTabStates) {
+    if (!groupTabStates.length) return;
+
+    const groups = [...element.querySelectorAll('.widget-type-group')];
+
+    for (let index = 0; index < groupTabStates.length; index++) {
+        const group = groups[index];
+        if (!group) continue;
+
+        group.dataset.currentTab = String(groupTabStates[index]);
     }
 }
 
@@ -1347,6 +1394,7 @@ async function updateWidget(widgetElement) {
     const refreshStartedAt = nowMs();
     const widgetTopBefore = widgetElement.getBoundingClientRect().top;
     const collapsibleContainerStates = getCollapsibleContainerStates(widgetElement);
+    const groupTabStates = getGroupTabStates(widgetElement);
     const newWidget = await fetchWidgetContent(widgetElement);
 
     if (newWidget) {
@@ -1373,6 +1421,8 @@ async function updateWidget(widgetElement) {
                 const input = newContent.querySelector('#' + id);
                 if (input) input.value = value;
             }
+
+            restoreGroupTabStates(widgetElement, groupTabStates);
 
             const oldHeader = widgetElement.querySelector('.widget-header');
             const newHeader = newWidget.querySelector('.widget-header');
@@ -1782,6 +1832,7 @@ async function applyContentUpdate() {
 
     let anyReplaced = false;
     const collapsibleStatesMap = new Map();
+    const groupTabStatesMap = new Map();
     const updatedWidgets = [];
 
     for (let i = 0; i < Math.min(realContainers.length, tempContainers.length); i++) {
@@ -1793,6 +1844,7 @@ async function applyContentUpdate() {
             const tempWidget = tempWidgets[j];
 
             collapsibleStatesMap.set(realWidget, getCollapsibleContainerStates(realWidget));
+            groupTabStatesMap.set(realWidget, getGroupTabStates(realWidget));
 
             if (realWidget.dataset.updateInterval && realWidget.outerHTML !== tempWidget.outerHTML) {
                 const oldContent = realWidget.querySelector('.widget-content');
@@ -1822,6 +1874,10 @@ async function applyContentUpdate() {
 
     if (anyReplaced) {
         const callbacksIndexBefore = contentReadyCallbacks.length;
+
+        for (const [widget, states] of groupTabStatesMap) {
+            restoreGroupTabStates(widget, states);
+        }
 
         setupPopovers();
         setupCarousels();
@@ -1952,6 +2008,7 @@ function _applyWidgetUpdate(widgetId, html) {
     if (!target) return;
 
     const collapsibleContainerStates = getCollapsibleContainerStates(target);
+    const groupTabStates = getGroupTabStates(target);
     const htmlElem = document.documentElement;
     const prevAnchor = htmlElem.style.overflowAnchor;
     htmlElem.style.overflowAnchor = 'none';
@@ -1977,6 +2034,8 @@ function _applyWidgetUpdate(widgetId, html) {
                 img.dataset.lazyInitialized = 'true';
             }
         }
+
+        restoreGroupTabStates(liveTarget, groupTabStates);
 
         const groupContents = liveTarget.querySelectorAll('.widget-group-content');
         for (let i = 0; i < groupContents.length; i++) {

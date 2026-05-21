@@ -2608,6 +2608,7 @@ If not provided it will display the statistics of the server Dynacat is running 
 | ---- | ---- | -------- | ------- |
 | type | string | yes |  |
 | name | string | no |  |
+| compact | boolean | no | false |
 | hide-swap | boolean | no | false |
 
 ###### `type`
@@ -2615,6 +2616,11 @@ Whether to display statistics for the local server or a remote server. Possible 
 
 ###### `name`
 The name of the server which will be displayed on the widget. If not provided it will default to the server's hostname.
+
+###### `compact`
+Whether to use a compact layout that hides system info, swap usage and the CPU 15-minute average.
+
+![](images/server-stats-compact-preview.webp)
 
 ###### `hide-swap`
 Whether to hide the swap usage.

@@ -19,6 +19,13 @@ func Main() int {
 		return 1
 	}
 
+	if options.envFile != "" {
+		if err := loadEnvFile(options.envFile); err != nil {
+			fmt.Printf("Failed to load env file: %v\n", err)
+			return 1
+		}
+	}
+
 	// Resolve config path with fallback to glance.yml for backward compatibility
 	options.configPath = resolveConfigPath(options.configPath)
 

@@ -246,7 +246,6 @@ func (widget *torrentingWidget) fetchFromHost(ctx context.Context, host *Torrent
 func (widget *torrentingWidget) fetchFromQBittorrent(ctx context.Context, host *TorrentingHostConfig) ([]torrentInfo, error) {
 	torrents, err := widget.qbFetchTorrentsOnce(ctx, host)
 	if errors.Is(err, errTorrentUnauthorized) {
-		slog.Info("qBittorrent session expired, re-logging in", "url", host.URL)
 		if loginErr := widget.qbLogin(ctx, host); loginErr != nil {
 			slog.Error("qBittorrent re-login failed", "url", host.URL, "error", loginErr)
 			return nil, loginErr

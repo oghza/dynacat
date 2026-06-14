@@ -779,7 +779,7 @@ func (a *application) handleWidgetActionRequest(w http.ResponseWriter, r *http.R
 }
 
 func (a *application) StaticAssetPath(asset string) string {
-	return a.Config.Server.BaseURL + "/static/" + staticFSHash + "/" + asset
+	return a.Config.Server.BaseURL + "/static/" + getStaticFSHash() + "/" + asset
 }
 
 func (a *application) VersionedAssetPath(asset string) string {
@@ -933,9 +933,9 @@ func (a *application) server() (func() error, func() error) {
 	}
 
 	mux.Handle(
-		fmt.Sprintf("GET /static/%s/{path...}", staticFSHash),
+		fmt.Sprintf("GET /static/%s/{path...}", getStaticFSHash()),
 		http.StripPrefix(
-			"/static/"+staticFSHash,
+			"/static/"+getStaticFSHash(),
 			fileServerWithCache(http.FS(staticFS), STATIC_ASSETS_CACHE_DURATION),
 		),
 	)
@@ -964,7 +964,7 @@ func (a *application) server() (func() error, func() error) {
 		int(STATIC_ASSETS_CACHE_DURATION.Seconds()),
 	)
 
-	mux.HandleFunc(fmt.Sprintf("GET /static/%s/css/bundle.css", staticFSHash), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("GET /static/%s/css/bundle.css", getStaticFSHash()), func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Cache-Control", assetCacheControlValue)
 		w.Header().Add("Content-Type", "text/css; charset=utf-8")
 		w.Write(bundledCSSContents)

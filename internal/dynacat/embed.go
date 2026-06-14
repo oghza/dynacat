@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -39,15 +40,23 @@ func readAllFromStaticFS(path string) ([]byte, error) {
 	return io.ReadAll(file)
 }
 
-var staticFSHash = func() string {
-	hash, err := computeFSHash(staticFS)
-	if err != nil {
-		slog.Warn("Could not compute static assets cache key", "error", err)
-		return strconv.FormatInt(time.Now().Unix(), 10)
-	}
+var (
+	staticFSHashOnce sync.Once
+	staticFSHashVal  string
+)
 
-	return hash
-}()
+func getStaticFSHash() string {
+	staticFSHashOnce.Do(func() {
+		hash, err := computeFSHash(staticFS)
+		if err != nil {
+			slog.Warn("Could not compute static assets cache key", "error", err)
+			staticFSHashVal = strconv.FormatInt(time.Now().Unix(), 10)
+			return
+		}
+		staticFSHashVal = hash
+	})
+	return staticFSHashVal
+}
 
 func computeFSHash(files fs.FS) (string, error) {
 	hash := md5.New()

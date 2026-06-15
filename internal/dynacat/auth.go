@@ -14,6 +14,7 @@ import (
 	mathrand "math/rand/v2"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -247,7 +248,10 @@ func (a *application) handleAuthenticationAttempt(w http.ResponseWriter, r *http
 	delete(a.failedAuthAttempts, ip)
 	a.authAttemptsMu.Unlock()
 
+	redirect := a.takeLoginRedirect(w, r)
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"redirect": redirect})
 }
 
 func (a *application) getAuthenticatedUser(w http.ResponseWriter, r *http.Request) *authenticatedUser {
@@ -359,7 +363,7 @@ func (a *application) handleAccessControl(w http.ResponseWriter, r *http.Request
 	if user == nil {
 		switch fallback {
 		case redirectToLogin:
-			http.Redirect(w, r, a.Config.Server.BaseURL+"/login", http.StatusSeeOther)
+			a.redirectToLoginPage(w, r)
 		case showUnauthorizedJSON:
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte(`{"error": "Unauthorized"}`))
@@ -375,7 +379,7 @@ func (a *application) handleAccessControl(w http.ResponseWriter, r *http.Request
 
 	switch fallback {
 	case redirectToLogin:
-		http.Redirect(w, r, a.Config.Server.BaseURL+"/login", http.StatusSeeOther)
+		a.redirectToLoginPage(w, r)
 	case showUnauthorizedJSON:
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte(`{"error": "Unauthorized"}`))
@@ -399,6 +403,52 @@ func (a *application) handleUnauthorizedResponse(w http.ResponseWriter, r *http.
 	}
 
 	return true
+}
+
+const AUTH_REDIRECT_COOKIE_NAME = "dynacat_redirect"
+
+// isSafeLocalPath reports whether target is a same-origin path safe to use in a
+// redirect: it must be root-relative and must not be a protocol-relative
+// ("//host") or backslash ("/\host") URL a browser could resolve elsewhere.
+func isSafeLocalPath(target string) bool {
+	return strings.HasPrefix(target, "/") &&
+		!strings.HasPrefix(target, "//") &&
+		!strings.HasPrefix(target, "/\\")
+}
+
+// redirectToLoginPage remembers where an unauthenticated visitor was headed
+// (path and query) so they can be returned there after logging in, then sends
+// them to the login page.
+func (a *application) redirectToLoginPage(w http.ResponseWriter, r *http.Request) {
+	if target := r.URL.RequestURI(); isSafeLocalPath(target) {
+		http.SetCookie(w, &http.Cookie{
+			Name:     AUTH_REDIRECT_COOKIE_NAME,
+			Value:    target,
+			Expires:  time.Now().Add(OIDC_STATE_VALID_PERIOD),
+			Secure:   a.isRequestHTTPS(r),
+			Path:     a.Config.Server.BaseURL + "/",
+			SameSite: http.SameSiteLaxMode,
+			HttpOnly: true,
+		})
+	}
+	http.Redirect(w, r, a.Config.Server.BaseURL+"/login", http.StatusSeeOther)
+}
+
+// takeLoginRedirect consumes and clears the post-login redirect cookie,
+// returning a safe destination to send the user to after a successful login.
+func (a *application) takeLoginRedirect(w http.ResponseWriter, r *http.Request) string {
+	target := a.Config.Server.BaseURL + "/"
+	if c, err := r.Cookie(AUTH_REDIRECT_COOKIE_NAME); err == nil && isSafeLocalPath(c.Value) {
+		target = c.Value
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     AUTH_REDIRECT_COOKIE_NAME,
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		Path:     a.Config.Server.BaseURL + "/",
+		HttpOnly: true,
+	})
+	return target
 }
 
 func (a *application) AnyAuthEnabled() bool {

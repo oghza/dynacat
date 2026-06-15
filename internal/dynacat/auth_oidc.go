@@ -233,7 +233,7 @@ func (a *application) handleOIDCCallback(w http.ResponseWriter, r *http.Request)
 	})
 
 	slog.Info("OIDC user logged in", "username", username)
-	http.Redirect(w, r, baseURL+"/", http.StatusSeeOther)
+	http.Redirect(w, r, a.takeLoginRedirect(w, r), http.StatusSeeOther)
 }
 
 func extractGroupsClaim(claims map[string]interface{}, claimName string) []string {

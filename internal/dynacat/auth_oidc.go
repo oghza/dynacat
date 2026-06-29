@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -124,7 +125,7 @@ func (a *application) handleOIDCCallback(w http.ResponseWriter, r *http.Request)
 		if errParam == "" {
 			errParam = "missing_code"
 		}
-		http.Redirect(w, r, baseURL+"/login?error="+errParam, http.StatusSeeOther)
+		http.Redirect(w, r, baseURL+"/login?error="+url.QueryEscape(errParam), http.StatusSeeOther)
 		return
 	}
 

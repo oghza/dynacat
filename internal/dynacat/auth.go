@@ -455,7 +455,6 @@ func (a *application) AnyAuthEnabled() bool {
 	return a.OIDCEnabled || a.PasswordEnabled
 }
 
-// Maybe this should be a POST request instead?
 func (a *application) handleLogoutRequest(w http.ResponseWriter, r *http.Request) {
 	a.setAuthSessionCookie(w, r, "", time.Now().Add(-1*time.Hour))
 

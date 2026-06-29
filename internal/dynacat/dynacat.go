@@ -915,7 +915,7 @@ func (a *application) server() (func() error, func() error) {
 
 	if a.AnyAuthEnabled() {
 		mux.HandleFunc("GET /login", a.handleLoginPageRequest)
-		mux.HandleFunc("GET /logout", a.handleLogoutRequest)
+		mux.HandleFunc("POST /logout", a.handleLogoutRequest)
 	}
 
 	if a.PasswordEnabled {

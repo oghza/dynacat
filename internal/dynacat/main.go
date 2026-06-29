@@ -238,8 +238,8 @@ func serveUpdateNoticeIfConfigLocationNotMigrated(configPath string) bool {
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusServiceUnavailable)
 		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusServiceUnavailable)
 		w.Write([]byte(bodyContents))
 	})
 

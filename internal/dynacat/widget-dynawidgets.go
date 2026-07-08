@@ -48,7 +48,8 @@ type dynawidgetsListEntry struct {
 }
 
 type dynawidgetsRequired struct {
-	URL string `yaml:"url"`
+	URL         string                       `yaml:"url"`
+	Subrequests map[string]*CustomAPIRequest `yaml:"subrequests"`
 }
 
 func (widget *dynawidgetsWidget) initialize() error {
@@ -80,12 +81,32 @@ func (widget *dynawidgetsWidget) initialize() error {
 	}
 
 	// Apply required defaults if user hasn't specified them
-	if required != nil && required.URL != "" {
-		if widget.CustomAPIRequest == nil {
-			widget.CustomAPIRequest = &CustomAPIRequest{}
+	if required != nil {
+		if required.URL != "" {
+			if widget.CustomAPIRequest == nil {
+				widget.CustomAPIRequest = &CustomAPIRequest{}
+			}
+			if widget.CustomAPIRequest.URL == "" {
+				widget.CustomAPIRequest.URL = required.URL
+			}
 		}
-		if widget.CustomAPIRequest.URL == "" {
-			widget.CustomAPIRequest.URL = required.URL
+
+		// Merge subrequests declared in the template's required section.
+		// User config takes precedence; a template default only fills a
+		// subrequest the user hasn't defined, or an empty URL on one they have.
+		for key, req := range required.Subrequests {
+			if req == nil {
+				continue
+			}
+			if widget.Subrequests == nil {
+				widget.Subrequests = make(map[string]*CustomAPIRequest)
+			}
+			existing, ok := widget.Subrequests[key]
+			if !ok || existing == nil {
+				widget.Subrequests[key] = req
+			} else if existing.URL == "" {
+				existing.URL = req.URL
+			}
 		}
 	}
 

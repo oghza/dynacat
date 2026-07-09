@@ -1418,7 +1418,7 @@ Display the status of your Docker containers along with an icon and an optional 
 
 > [!NOTE]
 >
-> The widget requires access to `docker.sock`. If you're running Dynacat inside a container, this can be done by mounting the socket as a volume:
+> The widget requires access to the Docker API. If you're running Dynacat inside a container, this can be done by mounting the socket as a volume or by setting `DOCKER_HOST` to a TCP Docker endpoint:
 >
 > ```yaml
 > services:
@@ -1505,7 +1505,7 @@ If any of the child containers are down, their status will propagate up to the p
 | ---- | ---- | -------- | ------- |
 | hide-by-default | boolean | no | false |
 | format-container-names | boolean | no | false |
-| sock-path | string | no | /var/run/docker.sock |
+| sock-path | string | no | `DOCKER_HOST`, otherwise `/var/run/docker.sock` |
 | category | string | no | |
 | running-only | boolean | no | false |
 | update-interval | string | no | 2m |
@@ -1517,7 +1517,7 @@ Whether to hide the containers by default. If set to `true` you'll have to manua
 When set to `true`, automatically converts container names such as `container_name_1` into `Container Name 1`.
 
 ##### `sock-path`
-The path to the Docker socket. This can also be a [remote socket](https://docs.docker.com/engine/daemon/remote-access/) or proxied socket using something like [docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy).
+The path to the Docker socket. If not set, Dynacat will use `DOCKER_HOST` and then fall back to `/var/run/docker.sock`. This can also be a [remote socket](https://docs.docker.com/engine/daemon/remote-access/) or proxied socket using something like [docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy).
 
 ###### `category`
 Filter to only the containers which have this category specified via the `dynacat.category` label. Useful if you want to have multiple containers widgets, each showing a different set of containers.
@@ -1599,7 +1599,7 @@ Example:
 
 > [!NOTE]
 >
-> The widget requires access to `docker.sock`. If you're running Dynacat inside a container, this can be done by mounting the socket as a volume:
+> The widget requires access to the Docker API. If you're running Dynacat inside a container, this can be done by mounting the socket as a volume or by setting `DOCKER_HOST` to a TCP Docker endpoint:
 >
 > ```yaml
 > services:
@@ -1618,7 +1618,7 @@ Preview:
 | Name | Type | Required | Default |
 | ---- | ---- | -------- | ------- |
 | show | string | no | both |
-| sock-path | string | no | /var/run/docker.sock |
+| sock-path | string | no | `DOCKER_HOST`, otherwise `/var/run/docker.sock` |
 | format-container-names | boolean | no | false |
 | collapse-after | integer | no | 4 |
 | update-interval | string | no | 15s |
@@ -1630,7 +1630,7 @@ Controls what to display in the widget. Possible values are:
 - `both` - Display both containers and images (default)
 
 ##### `sock-path`
-The path to the Docker socket. This can also be a [remote socket](https://docs.docker.com/engine/daemon/remote-access/) or proxied socket using something like [docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy).
+The path to the Docker socket. If not set, Dynacat will use `DOCKER_HOST` and then fall back to `/var/run/docker.sock`. This can also be a [remote socket](https://docs.docker.com/engine/daemon/remote-access/) or proxied socket using something like [docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy).
 
 ##### `format-container-names`
 When set to `true`, automatically converts container names such as `container_name_1` into `Container Name 1`.

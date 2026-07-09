@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -41,7 +42,10 @@ func (widget *dockerContainersWidget) initialize() error {
 	}
 
 	if widget.SockPath == "" {
-		widget.SockPath = "/var/run/docker.sock"
+		widget.SockPath = os.Getenv("DOCKER_HOST")
+		if widget.SockPath == "" {
+			widget.SockPath = "/var/run/docker.sock"
+		}
 	}
 
 	return nil

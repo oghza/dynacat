@@ -109,7 +109,10 @@ func (widget *dockerControllerWidget) initialize() error {
 	widget.withTitle("Docker").withCacheDuration(15 * time.Second)
 
 	if widget.SockPath == "" {
-		widget.SockPath = "/var/run/docker.sock"
+		widget.SockPath = os.Getenv("DOCKER_HOST")
+		if widget.SockPath == "" {
+			widget.SockPath = "/var/run/docker.sock"
+		}
 	}
 
 	if widget.Show == "" {
@@ -150,11 +153,41 @@ func getSelfContainerID() string {
 	return string(m[:12])
 }
 
-func newDockerCtrlClient(sockPath string) *http.Client {
+type dockerCtrlHostTransport struct {
+	target *url.URL
+	base   http.RoundTripper
+}
+
+func (t *dockerCtrlHostTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	cloned := req.Clone(req.Context())
+	cloned.URL.Scheme = t.target.Scheme
+	cloned.URL.Host = t.target.Host
+	cloned.Host = t.target.Host
+	return t.base.RoundTrip(cloned)
+}
+
+func newDockerCtrlClient(source string) *http.Client {
+	if strings.HasPrefix(source, "tcp://") || strings.HasPrefix(source, "http://") || strings.HasPrefix(source, "https://") {
+		parsed, err := url.Parse(source)
+		if err == nil && parsed.Host != "" {
+			scheme := parsed.Scheme
+			if scheme == "tcp" {
+				scheme = "http"
+			}
+
+			return &http.Client{
+				Transport: &dockerCtrlHostTransport{
+					target: &url.URL{Scheme: scheme, Host: parsed.Host},
+					base:   http.DefaultTransport,
+				},
+			}
+		}
+	}
+
 	return &http.Client{
 		Transport: &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				return net.Dial("unix", sockPath)
+				return net.Dial("unix", source)
 			},
 		},
 	}
